@@ -1,5 +1,5 @@
 /*
- * Pulse detecting program based on the pulse sensor (https://pulsesensor.com/) example:
+ * Heartrate monitor program based on the pulse sensor (https://pulsesensor.com/) example:
  * https://github.com/WorldFamousElectronics/PulseSensor_Amped_Arduino
  * 
  * This program collect samples from each peak-to-peak data to make a dataset which is
