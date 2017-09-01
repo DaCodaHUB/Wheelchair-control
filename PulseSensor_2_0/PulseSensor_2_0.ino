@@ -1,4 +1,4 @@
-/*
+:/*
  * Pulse detecting program based on the pulse sensor (https://pulsesensor.com/) example:
  * https://github.com/WorldFamousElectronics/PulseSensor_Amped_Arduino
  * 
@@ -9,8 +9,7 @@
  * This program also uses the EMA (Exponential Moving Average) filter to smooth out the signal.
  * The library can be found here: https://github.com/sofian/MovingAverage
  */
- 
-//#include <Filters.h>
+
 #include <MovingAverage.h>
 #include <math.h>
 
