@@ -83,7 +83,6 @@ void loop() {
   int val = analogRead(A8);
   int regularizeOutValue = 0;
   voltageRate = map(val, 0, 1023, 0, PWM_base - PWM_low);
-  //voltageRate = val*153/2046;
   
   if (digitalRead(frontButton) == HIGH) {
     goForward = true;

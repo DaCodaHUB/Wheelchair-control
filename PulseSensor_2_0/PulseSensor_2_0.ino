@@ -31,7 +31,7 @@
 #define PWM_high 255*4/5          // 80% duty cycle
 
 //  Variables
-int pulsePin = 0;                 // Pulse Sensor purple wire connected to analog pin 0
+int pulsePin = A0;                 // Pulse Sensor purple wire connected to analog pin 0
 int blinkPin = 13;                // pin to blink led at each beat
 int fadePin = 5;                  // pin to do fancy classy fading blink at each beat
 int fadeRate = 0;                 // used to fade LED on with PWM on fadePin
