@@ -30,13 +30,13 @@
  * 10: front, back
  * 
  * Buttons:
- * 71: front
- * 72: back
- * 73: right
- * 74: left
+ * 48: front
+ * 47: back
+ * 49: right
+ * 46: left
  * 
- * Potentiometer: speed - 89
- * Map: val*23/50 + 1023/5
+ * Potentiometer: speed - A8
+ * Map: val*153/2046
  */
 
 /*
@@ -52,10 +52,10 @@ int emergencyBrake = 0;
 
 // Potentiometer with analogRead
 int voltageRate = 0;
-const int frontButton = 71;
-const int backButton = 72;
-const int rightButton = 73;
-const int leftButton = 74;
+const int frontButton = 48;
+const int backButton = 47;
+const int rightButton = 49;
+const int leftButton = 46;
 
 // Movements
 boolean goRight = false;
@@ -82,35 +82,37 @@ void setup() {
 void loop() {
   int val = analogRead(A8);
   int regularizeOutValue = 0;
-  voltageRate = map(val, 0, 1023, PWM_low, PWM_base);
+  voltageRate = map(val, 0, 1023, 0, PWM_base - PWM_low);
+  //voltageRate = val*153/2046;
   
   if (digitalRead(frontButton) == HIGH) {
-    goForward == true;
+    goForward = true;
   } else {
-    goForward == false;
+    goForward = false;
   }
 
   if (digitalRead(backButton) == HIGH) {
-    goBackward == true;
+    goBackward = true;
   } else {
-    goBackward == false;
+    goBackward = false;
   }
 
   if (digitalRead(rightButton) == HIGH) {
-    goLeft == true;
+    goRight = true;
   } else {
-    goLeft == false;
+    goRight = false;
   }
 
   if (digitalRead(leftButton) == HIGH) {
-    goRight == true;
+    goLeft = true;
   } else {
-    goRight == false;
+    goLeft = false;
   }
 
   if (goForward == true) {
     regularizeOutValue = PWM_base + voltageRate;
     if(regularizeOutValue <= PWM_high){
+      Serial.println ("Go forward");
       analogWrite(10, regularizeOutValue);
       analogWrite(9, PWM_base);
     }else{
@@ -120,6 +122,7 @@ void loop() {
   } else if (goBackward == true) {
     regularizeOutValue = PWM_base - voltageRate;
     if(regularizeOutValue >= PWM_low){
+      Serial.println ("Go backward");
       analogWrite(10, regularizeOutValue);
       analogWrite(9, PWM_base);
     }else{
@@ -129,6 +132,7 @@ void loop() {
   } else if (goRight == true) {
     regularizeOutValue = PWM_base + voltageRate;
     if(regularizeOutValue <= PWM_high){
+      Serial.println ("Go right");
       analogWrite(9, regularizeOutValue);
       analogWrite(10, PWM_base);
     }else{
@@ -138,6 +142,7 @@ void loop() {
   } else if (goLeft == true) {
     regularizeOutValue = PWM_base - voltageRate;
     if(regularizeOutValue >= PWM_low){
+      Serial.println ("Go left");
       analogWrite(9, regularizeOutValue);
       analogWrite(10, PWM_base);
     }else{

@@ -1,19 +1,19 @@
 /*
- * Filters: Smoothing (10 points), (Low pass EMA)
+ * Author: Dang Le
+ * Using IMU BNO055
  */
 
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
-#include <Adafruit_LSM303_U.h>
-#include <Adafruit_L3GD20_U.h>
-#include <Adafruit_9DOF.h>
+#include <Adafruit_BNO055.h>
+#include <utility/imumaths.h>
 #include <math.h>
 //#include <Filters.h>
 
 #define ELEMENTS 3
 
 /* Assign a unique ID to the sensors */
-Adafruit_LSM303_Accel_Unified accel = Adafruit_LSM303_Accel_Unified(30301);
+Adafruit_BNO055 bno = Adafruit_BNO055();
 
 // Delay
 int deltat = 0;
@@ -25,10 +25,10 @@ float lastSpeed = 0;
 
 // Accelerations
 sensors_event_t event;
-float accelX = 0;
-float accelY = 0;
-float accelZ = 0;
+float accel[3];
+//float lastAccel[3];
 float accelTotal = 0;
+float lastAccelTotal = 0;
 
 // Smoothing
 const int numReadings = 10;
@@ -37,8 +37,9 @@ int readIndex[ELEMENTS];              // the index of the current reading
 int total[ELEMENTS];                  // the running total
 int average[ELEMENTS];                // the average
 
+boolean slowDown = false;
+
 int Smoothing (int eleNum, int data);
-void displaySensorDetails(void);
 
 void setup(void)
 {
@@ -50,64 +51,71 @@ void setup(void)
     readIndex[i] = 0;
     total[i] = 0;
     average[i] = 0;
+    accel[i] = 0;
+    //lastAccel[i] = 0;
   }
-  
-  Serial.println(F("Adafruit 9DOF Tester")); Serial.println("");
-  
-  /* Initialise the sensors */
-  if(!accel.begin())
+
+  /* Initialise the sensor */
+  if(!bno.begin())
   {
-    /* There was a problem detecting the ADXL345 ... check your connections */
-    Serial.println(F("Ooops, no LSM303 detected ... Check your wiring!"));
+    /* There was a problem detecting the BNO055 ... check your connections */
+    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
     while(1);
   }
+
+  delay(1000);
   
-  /* Display some basic information on this sensor */
-  displaySensorDetails();
+  bno.setExtCrystalUse(true);
 }
 
 void loop(void)
 {
-/*
-  // Display the results (acceleration is measured in m/s^2)
-  accel.getEvent(&event);
-  Serial.print(F("ACCEL "));
-  Serial.print("X: "); Serial.print(Smoothing(0, event.acceleration.x)); Serial.print("  ");
-  Serial.print("Y: "); Serial.print(Smoothing(1, event.acceleration.y)); Serial.print("  ");
-  Serial.print("Z: "); Serial.print(Smoothing(2, event.acceleration.z)); Serial.print("  ");Serial.println("m/s^2 ");
-  Serial.println(F(""));
-  delay(50);
-*/
-
   deltat = millis() - start;
   if (deltat > 10) {
-    accel.getEvent(&event);
-    
-    //accelX = event.acceleration.x;
-    //accelY = event.acceleration.y;
-    //accelZ = event.acceleration.z;
-    //start = millis();
-    
-    accelX = Smoothing(0, event.acceleration.x);
-    accelY = Smoothing(1, event.acceleration.y);
-    accelZ = Smoothing(2, event.acceleration.z);
+    imu::Vector<3> lineaeAccel = bno.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
+    accel[0] = Smoothing(0, lineaeAccel.x());
+    accel[1] = Smoothing(1, lineaeAccel.y());
+    accel[2] = Smoothing(2, lineaeAccel.z());
     start = millis();
-    accelTotal = sqrt(accelX * accelX + accelY * accelY + accelZ * accelZ) - 10.70;
-    if (accelTotal > 0) {
-      curSpeed = accelTotal * 0.01 + lastSpeed;
-      lastSpeed = curSpeed;
-    } else if ((accelX < 0 && accelY < 0 && accelZ >= 9.8 && accelTotal > 0) ||(accelX < 0 && accelY < 0 && accelZ < 9.8 && accelTotal < -0.5)) {
-      curSpeed = lastSpeed - accelTotal * 0.01;
-      lastSpeed = curSpeed;
-    } else {
-      lastSpeed = 0;
-    }
-  }
-  //Serial.print("Acceleration ");
-  //Serial.print(accelTotal);
-  //Serial.print(" Speed ");
-  //Serial.println(curSpeed);
+    /*
+    Serial.print("X: ");
+    Serial.print(accel[0]);
+    Serial.print(" Y: ");
+    Serial.print(accel[1]);
+    Serial.print(" Z: ");
+    Serial.print(accel[2]);
+    Serial.print("\t\t");
+    */
+    accelTotal = sqrt(accel[0] * accel[0] + accel[1] * accel[1] + accel[2] * accel[2]);
 
+    if (accelTotal < lastAccelTotal) {
+      slowDown = true;
+    } else if (accelTotal > lastAccelTotal) {
+      slowDown = false;
+    }
+
+    if (slowDown == false) {
+      curSpeed = lastSpeed + accelTotal * 0.01;
+    } else {
+      if (accelTotal > 0) {
+        curSpeed = lastSpeed - accelTotal * 0.01;
+        if (curSpeed < 0) {
+          curSpeed = 0;
+        }
+      } else {
+        curSpeed = 0;
+        slowDown = false;
+      }
+    }
+    lastSpeed = curSpeed;
+    lastAccelTotal = accelTotal;
+  }
+  Serial.print("Acceleration ");
+  Serial.print(accelTotal);
+  Serial.print(" m/s^2 ");
+  Serial.print("Speed ");
+  Serial.print(curSpeed);
+  Serial.println(" m/s");
 }
 
 int Smoothing (int eleNum, int data) {
@@ -120,9 +128,6 @@ int Smoothing (int eleNum, int data) {
   total[eleNum] = total[eleNum] + readings[readingIndex];
   // advance to the next position in the array:
   readIndex[eleNum] = readIndex[eleNum] + 1;
-  //Serial.println(readIndex[eleNum]);
-  //Serial.println(readingIndex);
-  //Serial.println(total[eleNum]);
   
   // if we're at the end of the array...
   if (readIndex[eleNum] >= numReadings) {
@@ -133,24 +138,5 @@ int Smoothing (int eleNum, int data) {
   // calculate the average:
   average[eleNum] = total[eleNum] / numReadings;
   return average[eleNum];
-}
-
-void displaySensorDetails(void)
-{
-  sensor_t sensor;
-  
-  accel.getSensor(&sensor);
-  Serial.println(F("----------- ACCELEROMETER ----------"));
-  Serial.print  (F("Sensor:       ")); Serial.println(sensor.name);
-  Serial.print  (F("Driver Ver:   ")); Serial.println(sensor.version);
-  Serial.print  (F("Unique ID:    ")); Serial.println(sensor.sensor_id);
-  Serial.print  (F("Max Value:    ")); Serial.print(sensor.max_value); Serial.println(F(" m/s^2"));
-  Serial.print  (F("Min Value:    ")); Serial.print(sensor.min_value); Serial.println(F(" m/s^2"));
-  Serial.print  (F("Resolution:   ")); Serial.print(sensor.resolution); Serial.println(F(" m/s^2"));
-  Serial.println(F("------------------------------------"));
-  Serial.println(F(""));
-  delay(500);
-
-  start = millis();
 }
 

@@ -1,5 +1,5 @@
 /*
- * Heartrate monitor program based on the pulse sensor (https://pulsesensor.com/) example:
+ * Pulse detecting program based on the pulse sensor (https://pulsesensor.com/) example:
  * https://github.com/WorldFamousElectronics/PulseSensor_Amped_Arduino
  * 
  * This program collect samples from each peak-to-peak data to make a dataset which is
@@ -23,9 +23,6 @@
 // The thresholds to decide whether the heartrate is normal enough to record
 #define maxHeartrate 120
 #define minHeartrate 40
-
-// The tolerance of the difference between the heart rates of 2 heartbeats
-#define Tolerance 20
 
 // A constant that a counter use to ignore the first few messy heartrate
 #define HEARTBEAT_COUNT 10

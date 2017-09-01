@@ -20,8 +20,6 @@ short peak_index = 1;                     // Keep track of the index of the peak
 short lastPeakIndex = 1;                  
 int lastSignal = 0;
 
-const float minDeltaLastPeak = 1 - float(Tolerance/100);
-const float maxDeltaLastPeak = 1 + float(Tolerance/100);
 /*
 void interruptSetup(){  // CHECK OUT THE Timer_Interrupt_Notes TAB FOR MORE ON INTERRUPTS 
   // Initializes Timer2 to throw an interrupt every 2mS.
@@ -32,7 +30,7 @@ void interruptSetup(){  // CHECK OUT THE Timer_Interrupt_Notes TAB FOR MORE ON I
   sei();             // MAKE SURE GLOBAL INTERRUPTS ARE ENABLED
 }
 */
-///*
+
 void interruptSetup(){  // CHECK OUT THE Timer_Interrupt_Notes TAB FOR MORE ON INTERRUPTS 
   // Initializes Timer1 to throw an interrupt every 2mS.
   TCCR1A = 0x02;
@@ -41,7 +39,7 @@ void interruptSetup(){  // CHECK OUT THE Timer_Interrupt_Notes TAB FOR MORE ON I
   TIMSK1 = 0x02;     // ENABLE INTERRUPT ON MATCH BETWEEN TIMER2 AND OCR2A
   sei();             // MAKE SURE GLOBAL INTERRUPTS ARE ENABLED
 }
-//*/
+
 // THIS IS THE TIMER 2 INTERRUPT SERVICE ROUTINE.
 // Timer 2 makes sure that we take a reading every 2 miliseconds
 ISR(TIMER1_COMPA_vect){                              // triggered when Timer2 counts to 124
@@ -71,7 +69,6 @@ ISR(TIMER1_COMPA_vect){                              // triggered when Timer2 co
       //Serial.println("Start recording");
     } else {  // Move to the next data point
       peak_to_peak[0] = peak_index;
-      //if (lastPeakIndex == 1 || (peak_index > minPeakIndex && peak_index < (maxDeltaLastPeak*lastPeakIndex) && peak_index > (minDeltaLastPeak*lastPeakIndex))) {
       if (lastPeakIndex == 1 || peak_index > minPeakIndex) {
         startSaving = true;
       }
